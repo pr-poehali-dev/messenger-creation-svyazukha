@@ -10,8 +10,40 @@ import Icon from '@/components/ui/icon';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-const mockChats = [
-  { id: 1, name: 'Анна Смирнова', avatar: '👩', lastMessage: 'Привет! Как дела?', time: '14:32', unread: 3, online: true },
+interface Chat {
+  id: number;
+  name: string;
+  avatar: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+  online: boolean;
+  messages?: Message[];
+}
+
+interface Message {
+  id: number;
+  text: string;
+  time: string;
+  sender: 'me' | 'other';
+  type?: 'text' | 'voice' | 'video';
+}
+
+const mockChats: Chat[] = [
+  { 
+    id: 1, 
+    name: 'Анна Смирнова', 
+    avatar: '👩', 
+    lastMessage: 'Привет! Как дела?', 
+    time: '14:32', 
+    unread: 3, 
+    online: true,
+    messages: [
+      { id: 1, text: 'Привет! Как дела?', time: '14:32', sender: 'other' },
+      { id: 2, text: 'Отлично, спасибо! А у тебя?', time: '14:30', sender: 'me' },
+      { id: 3, text: 'Давно не виделись!', time: '14:28', sender: 'other' },
+    ]
+  },
   { id: 2, name: 'Команда разработки', avatar: '💻', lastMessage: 'Готово к релизу', time: '13:15', unread: 0, online: false },
   { id: 3, name: 'Максим Иванов', avatar: '👨', lastMessage: 'Отправил файлы', time: '12:04', unread: 1, online: true },
   { id: 4, name: 'Семья', avatar: '👨‍👩‍👧‍👦', lastMessage: 'Встречаемся в 18:00', time: 'Вчера', unread: 0, online: false },
@@ -29,6 +61,8 @@ const mockContacts = [
 export default function Index() {
   const [activeTab, setActiveTab] = useState('chats');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messageText, setMessageText] = useState('');
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,6 +130,7 @@ export default function Index() {
                 {mockChats.map((chat) => (
                   <Card
                     key={chat.id}
+                    onClick={() => setSelectedChat(chat)}
                     className="cursor-pointer border-0 bg-card p-4 transition-all hover:bg-muted"
                   >
                     <div className="flex items-start gap-3">
@@ -374,6 +409,92 @@ export default function Index() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedChat && (
+        <div className="fixed inset-0 z-50 bg-background animate-fade-in">
+          <div className="flex h-full flex-col">
+            <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setSelectedChat(null)}
+              >
+                <Icon name="ArrowLeft" size={24} />
+              </Button>
+              <div className="relative">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src="" />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-xl">
+                    {selectedChat.avatar}
+                  </AvatarFallback>
+                </Avatar>
+                {selectedChat.online && (
+                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-green-500" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{selectedChat.name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {selectedChat.online ? 'В сети' : 'Не в сети'}
+                </p>
+              </div>
+              <Button size="icon" variant="ghost">
+                <Icon name="Phone" size={20} />
+              </Button>
+              <Button size="icon" variant="ghost">
+                <Icon name="Video" size={20} />
+              </Button>
+            </div>
+
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {selectedChat.messages?.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                        message.sender === 'me'
+                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          : 'bg-card'
+                      }`}
+                    >
+                      <p className="text-sm">{message.text}</p>
+                      <span className="mt-1 block text-xs opacity-70">
+                        {message.time}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+
+            <div className="border-t border-border bg-card p-4">
+              <div className="flex items-center gap-2">
+                <Button size="icon" variant="ghost" className="h-10 w-10">
+                  <Icon name="Paperclip" size={20} />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-10 w-10">
+                  <Icon name="Mic" size={20} className="text-primary" />
+                </Button>
+                <Input
+                  placeholder="Введите сообщение..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  size="icon"
+                  className="h-10 w-10 bg-gradient-to-r from-primary to-secondary"
+                >
+                  <Icon name="Send" size={20} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
