@@ -64,6 +64,8 @@ export default function Index() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState('');
   const [chats, setChats] = useState<Chat[]>(mockChats);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   const handleSendMessage = () => {
     if (!messageText.trim() || !selectedChat) return;
@@ -94,6 +96,53 @@ export default function Index() {
     const updatedChat = updatedChats.find(c => c.id === selectedChat.id);
     if (updatedChat) setSelectedChat(updatedChat);
     setMessageText('');
+  };
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setRecordingDuration(0);
+    const interval = setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+    (window as any).recordingInterval = interval;
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    if ((window as any).recordingInterval) {
+      clearInterval((window as any).recordingInterval);
+    }
+    
+    if (recordingDuration >= 1 && selectedChat) {
+      const now = new Date();
+      const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      const newMessage: Message = {
+        id: (selectedChat.messages?.length || 0) + 1,
+        text: `🎤 Голосовое сообщение (${recordingDuration} сек)`,
+        time: timeString,
+        sender: 'me',
+        type: 'voice'
+      };
+
+      const updatedChats = chats.map(chat => {
+        if (chat.id === selectedChat.id) {
+          return {
+            ...chat,
+            messages: [...(chat.messages || []), newMessage],
+            lastMessage: '🎤 Голосовое сообщение',
+            time: timeString
+          };
+        }
+        return chat;
+      });
+
+      setChats(updatedChats);
+      const updatedChat = updatedChats.find(c => c.id === selectedChat.id);
+      if (updatedChat) setSelectedChat(updatedChat);
+    }
+    
+    setRecordingDuration(0);
   };
 
   return (
@@ -492,7 +541,24 @@ export default function Index() {
                           : 'bg-card'
                       }`}
                     >
-                      <p className="text-sm">{message.text}</p>
+                      {message.type === 'voice' ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                          >
+                            <Icon name="Play" size={16} />
+                          </Button>
+                          <div className="flex-1">
+                            <div className="h-1 rounded-full bg-white/30">
+                              <div className="h-full w-0 rounded-full bg-white" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm">{message.text}</p>
+                      )}
                       <span className="mt-1 block text-xs opacity-70">
                         {message.time}
                       </span>
@@ -503,13 +569,39 @@ export default function Index() {
             </ScrollArea>
 
             <div className="border-t border-border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <Button size="icon" variant="ghost" className="h-10 w-10">
-                  <Icon name="Paperclip" size={20} />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-10 w-10">
-                  <Icon name="Mic" size={20} className="text-primary" />
-                </Button>
+              {isRecording ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center">
+                    <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Запись голосового сообщения...</p>
+                    <p className="text-xs text-muted-foreground">{recordingDuration} сек</p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="h-10 w-10"
+                    onMouseUp={handleStopRecording}
+                    onTouchEnd={handleStopRecording}
+                  >
+                    <Icon name="Square" size={20} />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button size="icon" variant="ghost" className="h-10 w-10">
+                    <Icon name="Paperclip" size={20} />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-10 w-10"
+                    onMouseDown={handleStartRecording}
+                    onTouchStart={handleStartRecording}
+                  >
+                    <Icon name="Mic" size={20} className="text-primary" />
+                  </Button>
                 <Input
                   placeholder="Введите сообщение..."
                   value={messageText}
@@ -530,7 +622,8 @@ export default function Index() {
                 >
                   <Icon name="Send" size={20} />
                 </Button>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
