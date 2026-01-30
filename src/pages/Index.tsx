@@ -66,6 +66,8 @@ export default function Index() {
   const [chats, setChats] = useState<Chat[]>(mockChats);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [isVideoCall, setIsVideoCall] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
 
   const handleSendMessage = () => {
     if (!messageText.trim() || !selectedChat) return;
@@ -143,6 +145,29 @@ export default function Index() {
     }
     
     setRecordingDuration(0);
+  };
+
+  const handleStartVideoCall = () => {
+    setIsVideoCall(true);
+    setCallDuration(0);
+    const interval = setInterval(() => {
+      setCallDuration(prev => prev + 1);
+    }, 1000);
+    (window as any).callInterval = interval;
+  };
+
+  const handleEndVideoCall = () => {
+    setIsVideoCall(false);
+    if ((window as any).callInterval) {
+      clearInterval((window as any).callInterval);
+    }
+    setCallDuration(0);
+  };
+
+  const formatCallDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -524,7 +549,7 @@ export default function Index() {
               <Button size="icon" variant="ghost">
                 <Icon name="Phone" size={20} />
               </Button>
-              <Button size="icon" variant="ghost">
+              <Button size="icon" variant="ghost" onClick={handleStartVideoCall}>
                 <Icon name="Video" size={20} />
               </Button>
             </div>
@@ -626,6 +651,76 @@ export default function Index() {
                 </Button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isVideoCall && selectedChat && (
+        <div className="fixed inset-0 z-[60] bg-background">
+          <div className="flex h-full flex-col">
+            <div className="relative h-full bg-gradient-to-br from-primary/20 to-secondary/20">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <Avatar className="mx-auto h-32 w-32 mb-6">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-6xl">
+                      {selectedChat.avatar}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h2 className="text-3xl font-bold mb-2">{selectedChat.name}</h2>
+                  <p className="text-lg text-muted-foreground mb-4">Видеозвонок</p>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-2">
+                    <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                    <span className="text-sm font-medium">{formatCallDuration(callDuration)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute right-4 top-4 h-40 w-32 overflow-hidden rounded-2xl border-2 border-border bg-muted shadow-lg">
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/30 to-secondary/30">
+                  <Icon name="User" size={48} className="text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 gap-4">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-14 w-14 rounded-full"
+                >
+                  <Icon name="Mic" size={24} />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-14 w-14 rounded-full"
+                >
+                  <Icon name="Video" size={24} />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="h-16 w-16 rounded-full"
+                  onClick={handleEndVideoCall}
+                >
+                  <Icon name="PhoneOff" size={28} />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-14 w-14 rounded-full"
+                >
+                  <Icon name="Volume2" size={24} />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-14 w-14 rounded-full"
+                >
+                  <Icon name="Maximize" size={24} />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
