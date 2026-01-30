@@ -152,9 +152,11 @@ export default function Index() {
           <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary">
-                  <span className="text-xl font-bold text-white">С</span>
-                </div>
+                <img 
+                  src="https://cdn.poehali.dev/projects/1a35f59f-a6f3-4251-8abc-38930a5ae793/files/3c19978c-5b57-41a3-9f30-03f5eb38f2fd.jpg" 
+                  alt="Связуха"
+                  className="h-10 w-10 rounded-2xl object-cover"
+                />
                 <h1 className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-2xl font-bold text-transparent">
                   Связуха
                 </h1>
