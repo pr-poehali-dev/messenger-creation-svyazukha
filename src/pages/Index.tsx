@@ -63,6 +63,38 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState('');
+  const [chats, setChats] = useState<Chat[]>(mockChats);
+
+  const handleSendMessage = () => {
+    if (!messageText.trim() || !selectedChat) return;
+
+    const now = new Date();
+    const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    const newMessage: Message = {
+      id: (selectedChat.messages?.length || 0) + 1,
+      text: messageText,
+      time: timeString,
+      sender: 'me'
+    };
+
+    const updatedChats = chats.map(chat => {
+      if (chat.id === selectedChat.id) {
+        return {
+          ...chat,
+          messages: [...(chat.messages || []), newMessage],
+          lastMessage: messageText,
+          time: timeString
+        };
+      }
+      return chat;
+    });
+
+    setChats(updatedChats);
+    const updatedChat = updatedChats.find(c => c.id === selectedChat.id);
+    if (updatedChat) setSelectedChat(updatedChat);
+    setMessageText('');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,7 +159,7 @@ export default function Index() {
 
             <ScrollArea className="h-[calc(100vh-200px)]">
               <div className="space-y-2">
-                {mockChats.map((chat) => (
+                {chats.map((chat) => (
                   <Card
                     key={chat.id}
                     onClick={() => setSelectedChat(chat)}
@@ -482,11 +514,19 @@ export default function Index() {
                   placeholder="Введите сообщение..."
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   className="flex-1"
                 />
                 <Button
                   size="icon"
-                  className="h-10 w-10 bg-gradient-to-r from-primary to-secondary"
+                  onClick={handleSendMessage}
+                  disabled={!messageText.trim()}
+                  className="h-10 w-10 bg-gradient-to-r from-primary to-secondary disabled:opacity-50"
                 >
                   <Icon name="Send" size={20} />
                 </Button>
