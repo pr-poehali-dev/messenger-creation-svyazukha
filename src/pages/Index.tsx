@@ -31,6 +31,18 @@ interface Message {
 
 const mockChats: Chat[] = [
   { 
+    id: 0,
+    name: 'ИИ-Ассистент',
+    avatar: '🤖',
+    lastMessage: 'Здравствуй! Чем могу помочь?',
+    time: 'Сейчас',
+    unread: 0,
+    online: true,
+    messages: [
+      { id: 1, text: 'Здравствуй! Я ИИ-ассистент Связухи. Чем могу помочь?', time: 'Сейчас', sender: 'other' },
+    ]
+  },
+  { 
     id: 1, 
     name: 'Анна Смирнова', 
     avatar: '👩', 
@@ -69,7 +81,7 @@ export default function Index() {
   const [isVideoCall, setIsVideoCall] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedChat) return;
 
     const now = new Date();
@@ -82,7 +94,10 @@ export default function Index() {
       sender: 'me'
     };
 
-    const updatedChats = chats.map(chat => {
+    const userMessage = messageText;
+    setMessageText('');
+
+    let updatedChats = chats.map(chat => {
       if (chat.id === selectedChat.id) {
         return {
           ...chat,
@@ -95,9 +110,52 @@ export default function Index() {
     });
 
     setChats(updatedChats);
-    const updatedChat = updatedChats.find(c => c.id === selectedChat.id);
+    let updatedChat = updatedChats.find(c => c.id === selectedChat.id);
     if (updatedChat) setSelectedChat(updatedChat);
-    setMessageText('');
+
+    if (selectedChat.id === 0) {
+      try {
+        const response = await fetch('https://functions.poehali.dev/3c9069a9-591a-462a-ba2b-c0b444ca663c', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            timestamp: timeString
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.message) {
+          const aiMessage: Message = {
+            id: (updatedChat?.messages?.length || 0) + 1,
+            text: data.message,
+            time: timeString,
+            sender: 'other'
+          };
+
+          updatedChats = chats.map(chat => {
+            if (chat.id === 0) {
+              return {
+                ...chat,
+                messages: [...(chat.messages || []), newMessage, aiMessage],
+                lastMessage: data.message,
+                time: timeString
+              };
+            }
+            return chat;
+          });
+
+          setChats(updatedChats);
+          updatedChat = updatedChats.find(c => c.id === 0);
+          if (updatedChat) setSelectedChat(updatedChat);
+        }
+      } catch (error) {
+        console.error('AI chat error:', error);
+      }
+    }
   };
 
   const handleStartRecording = () => {
